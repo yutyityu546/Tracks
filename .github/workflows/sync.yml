@@ -1,31 +1,55 @@
-name: Auto Music Sync
+import os
+from yt_dlp import YoutubeDL
 
-on:
-  schedule:
-    - cron: '0 12 * * *'
-  workflow_dispatch:
+# Четкие и точные запросы по топ-артистам и жанрам вместо рандома
+SEARCH_QUERIES = [
+    "scsearch2: Пошлая Молли топ треки",
+    "scsearch2: mylancore remix",
+    "scsearch2: Платина топ",
+    "scsearch2: Friendly Thug 52 Niggaz",
+    "scsearch2: OG Buda топ"
+]
 
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # Даем права на запись
+# Получаем список уже существующих файлов в папке
+existing_files = set()
+for f in os.listdir("."):
+    if f.endswith(".mp3"):
+        existing_files.add(f[:-4].lower().strip())
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+ydl_opts = {
+    "format": "bestaudio/best",
+    "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
+    "outtmpl": "%(title)s.%(ext)s",
+    "quiet": True,
+}
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+downloaded_any = False
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install -y ffmpeg
-        pip install yt-dlp
+with YoutubeDL(ydl_opts) as ydl:
+    for query in SEARCH_QUERIES:
+        try:
+            print(f"Ищем: {query}")
+            info = ydl.extract_info(query, download=False)
+            for entry in info.get("entries", [info]):
+                title = entry.get("title")
+                clean_title = title.replace("/", "_").replace("\\", "_").strip()
+                if clean_title.lower() in existing_files:
+                    continue
+                
+                print(f"Скачиваем: {clean_title}")
+                ydl.download([entry.get("webpage_url")])
+                downloaded_any = True
+                existing_files.add(clean_title.lower())
+        except Exception as e:
+            print(f"Ошибка поиска: {e}")
 
-    - name: Run sync script
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: python sync.py
+# Если скачались новые треки, заливаем их на GitHub
+if downloaded_any:
+    os.system("git config --global user.name 'GitHub Action Bot'")
+    os.system("git config --global user.email 'action@github.com'")
+    os.system("git add *.mp3")
+    os.system("git commit -m 'Auto-add top artist tracks'")
+    os.system(f"git push https://x-access-token:{os.environ.get('GITHUB_TOKEN')}@github.com/yutyityu546/Tracks.git main")
+    print("Топ-треки успешно улетели на GitHub!")
+else:
+    print("Новых треков для скачивания не найдено.")
