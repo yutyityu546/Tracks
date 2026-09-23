@@ -1,11 +1,11 @@
 import os
 from yt_dlp import YoutubeDL
 
-REPO_URL = "https://github.com/yutyityu546/Tracks.git"
+# Используем SoundCloud поиск (scsearch) вместо YouTube
 SEARCH_QUERIES = [
-    "ytsearch3: Пошлая Молли новинки",
-    "ytsearch3: русский рэп новинки",
-    "ytsearch3: mylancore remix"
+    "scsearch3: Пошлая Молли",
+    "scsearch3: русский рэп новинки",
+    "scsearch3: mylancore remix"
 ]
 
 # Получаем список уже существующих файлов в папке
@@ -26,6 +26,7 @@ downloaded_any = False
 with YoutubeDL(ydl_opts) as ydl:
     for query in SEARCH_QUERIES:
         try:
+            print(f"Ищем: {query}")
             info = ydl.extract_info(query, download=False)
             for entry in info.get("entries", [info]):
                 title = entry.get("title")
@@ -40,12 +41,12 @@ with YoutubeDL(ydl_opts) as ydl:
         except Exception as e:
             print(f"Ошибка поиска: {e}")
 
-# Если скачались новые треки, просто заливаем их через стандартные git-команды
+# Если скачались новые треки, заливаем их на GitHub
 if downloaded_any:
     os.system("git config --global user.name 'GitHub Action Bot'")
     os.system("git config --global user.email 'action@github.com'")
     os.system("git add *.mp3")
-    os.system("git commit -m 'Auto-add new music tracks'")
+    os.system("git commit -m 'Auto-add new music tracks from SoundCloud'")
     os.system(f"git push https://x-access-token:{os.environ.get('GITHUB_TOKEN')}@github.com/yutyityu546/Tracks.git main")
     print("Все треки успешно улетели на GitHub!")
 else:
