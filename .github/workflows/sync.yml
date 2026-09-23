@@ -8,6 +8,8 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Даем права на запись
 
     steps:
     - name: Checkout repository
@@ -21,9 +23,9 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update && sudo apt-get install -y ffmpeg
-        pip install yt-dlp PyGithub
+        pip install yt-dlp
 
     - name: Run sync script
       env:
-        GH_PAT: ${{ secrets.GH_PAT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: python sync.py
