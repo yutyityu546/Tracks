@@ -2,12 +2,11 @@ name: Auto Music Sync
 
 on:
   schedule:
-    - cron: '0 12 * * *' # Запускается автоматически каждый день в 12:00
-  workflow_dispatch: # Позволяет запускать вручную кнопкой прямо на сайте GitHub
+    - cron: '0 12 * * *'
+  workflow_dispatch:
 
 jobs:
   sync:
-  
     runs-on: ubuntu-latest
 
     steps:
@@ -26,23 +25,28 @@ jobs:
 
     - name: Run sync script
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        GH_PAT: ${{ secrets.GH_PAT }}
       run: |
         python -c '
         import os
         from github import Github
+        from github import Auth
         from yt_dlp import YoutubeDL
 
-        GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-        REPO_NAME = "yutyityu546/Tracks"
+        token = os.environ.get("GH_PAT")
+        if not token:
+            raise ValueError("Токен GH_PAT не найден в переменных окружения!")
 
+        auth = Auth.Token(token)
+        g = Github(auth=auth)
+        
+        REPO_NAME = "yutyityu546/Tracks"
         SEARCH_QUERIES = [
             "ytsearch3: Пошлая Молли новинки",
             "ytsearch3: русский рэп новинки",
             "ytsearch3: mylancore remix"
         ]
 
-        g = Github(GITHUB_TOKEN)
         repo = g.get_repo(REPO_NAME)
         existing_files = set()
         
@@ -51,7 +55,7 @@ jobs:
                 if f.name.endswith(".mp3"):
                     existing_files.add(f.name[:-4].lower().strip())
         except Exception as e:
-            print(f"Ошибка: {e}")
+            print(f"Ошибка чтения репозитория: {e}")
 
         ydl_opts = {
             "format": "bestaudio/best",
