@@ -33,13 +33,18 @@ jobs:
         import os
         from yt_dlp import YoutubeDL
 
-        # Точные поисковые запросы вместо общих слов
-        queries = [
-            "ytsearch1: Пошлая Молли Любимая песня твоей сестры",
-            "ytsearch1: mylancore remix phonk",
-            "ytsearch1: Платина Опиаты круг",
-            "ytsearch1: Friendly Thug 52 Manchester",
-            "ytsearch1: OG Buda Бандит"
+        # Список из 50 исполнителей и жанров для массовой выкачки
+        artists = [
+            "Пошлая Молли", "mylancore remix", "Платина", "Friendly Thug 52", "OG Buda",
+            "Mayot", "SEEMEE", "Scally Milano", "163ONMYNECK", "Kizaru",
+            "Big Baby Tape", "Boulevard Depo", "PHARAOH", "SALUKI", "Friendly Thug",
+            "Obladaet", "Thomas Mraz", "Markul", "Scriptonite", "Feduk",
+            "LSP", "Loqiemean", "Mnogoznaal", "Jeembo", "TVETH",
+            "kai angel", "9mice", "Shadowraze", "LXST CXNTURY", "DVRST",
+            "Kordhell", "Cenobite", "Vnuk", "Sqwore", "Pinq",
+            "Lovv66", "Soda Luv", "Heronwater", "Bushido Zho", "Alblak 52",
+            "Yung Trappa", "Oxxxymiron", "ATL", "Murkage Dave", "Green Apelsin",
+            "Три Дня Дождя", "Кино", "Папин Олимпос", "Дисплей", "Мёртвый Ты"
         ]
 
         existing = set()
@@ -57,7 +62,8 @@ jobs:
 
         downloaded = False
         with YoutubeDL(ydl_opts) as ydl:
-            for q in queries:
+            for artist in artists:
+                q = f"scsearch1: {artist} трек"
                 try:
                     info = ydl.extract_info(q, download=False)
                     entries = info.get("entries", [info])
@@ -67,19 +73,20 @@ jobs:
                         clean = title.replace("/", "_").replace("\\", "_").strip()
                         if clean.lower() in existing:
                             continue
+                        print(f"Качаем: {clean}")
                         ydl.download([e.get("webpage_url")])
                         downloaded = True
                         existing.add(clean.lower())
                 except Exception as err:
-                    print(f"Ошибка: {err}")
+                    print(f"Ошибка с {artist}: {err}")
 
         if downloaded:
             os.system("git config --global user.name '\''GitHub Action Bot'\''")
             os.system("git config --global user.email '\''action@github.com'\''")
             os.system("git add *.mp3")
-            os.system("git commit -m '\''Add normal hits'\''")
+            os.system("git commit -m '\''Mass auto-add 50 artists tracks'\''")
             os.system("git push https://x-access-token:" + os.environ.get("GITHUB_TOKEN") + "@github.com/yutyityu546/Tracks.git main")
-            print("Готово!")
+            print("Все треки успешно улетели в репозиторий!")
         else:
             print("Новых треков нет.")
         '
